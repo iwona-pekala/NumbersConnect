@@ -29,4 +29,71 @@ body {
 #currentBoardDisplay {
   font-size: 18px;
   margin-top: 5px;
+}
+
+/* Button styling */
+button {
+  /* Size - minimum touch target size for accessibility */
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px 20px;
+  
+  /* Appearance */
+  background-color: #000;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  
+  /* Interaction */
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.2s, background-color 0.2s;
+}
+
+/* Hover state */
+button:hover {
+  background-color: #333;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Focus state - clear focus indicator for accessibility */
+button:focus {
+  outline: 3px solid #4d90fe;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(77, 144, 254, 0.5);
+}
+
+/* Active state */
+button:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Board size buttons container */
+#boardButtons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Next board button container */
+#nextBoardDiv {
+  margin-top: 15px;
+}
+
+/* Make buttons even bigger on small screens */
+@media (max-width: 768px) {
+  button {
+    padding: 12px 24px;
+    font-size: 1.1rem;
+    min-width: 60px;
+    min-height: 60px;
+  }
+  
+  #boardButtons {
+    gap: 8px;
+  }
 } 
