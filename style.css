@@ -33,7 +33,7 @@ body {
 
 /* Button styling */
 button {
-  /* Size - minimum touch target size for accessibility */
+  /* Size - baseline touch target size */
   min-width: 44px;
   min-height: 44px;
   padding: 10px 20px;
@@ -84,7 +84,7 @@ button:active {
   margin-top: 15px;
 }
 
-/* Make buttons even bigger on small screens */
+/* Adjust for mobile and small screens */
 @media (max-width: 768px) {
   button {
     padding: 12px 24px;
@@ -95,5 +95,59 @@ button:active {
   
   #boardButtons {
     gap: 8px;
+  }
+}
+
+/* Target high-density displays (2x) */
+@media (-webkit-min-device-pixel-ratio: 2), 
+       (min-resolution: 192dpi),
+       (min-resolution: 2dppx) {
+  button {
+    min-width: 70px;
+    min-height: 70px;
+    padding: 14px 28px;
+    font-size: 1.2rem;
+  }
+}
+
+/* Target ultra-high-density displays (3x or higher) */
+@media (-webkit-min-device-pixel-ratio: 3), 
+       (min-resolution: 288dpi),
+       (min-resolution: 3dppx) {
+  button {
+    min-width: 88px;
+    min-height: 88px; 
+    padding: 16px 32px;
+    font-size: 1.3rem;
+  }
+}
+
+/* Combine both mobile and high-density for the best touch experience */
+@media (max-width: 768px) and 
+       ((-webkit-min-device-pixel-ratio: 2) or 
+        (min-resolution: 192dpi) or 
+        (min-resolution: 2dppx)) {
+  button {
+    min-width: 80px;
+    min-height: 80px;
+    padding: 15px 30px;
+    font-size: 1.25rem;
+  }
+}
+
+/* Touch-optimized on small high-density screens */
+@media (max-width: 768px) and 
+       ((-webkit-min-device-pixel-ratio: 3) or 
+        (min-resolution: 288dpi) or 
+        (min-resolution: 3dppx)) {
+  button {
+    min-width: 100px;
+    min-height: 100px;
+    padding: 18px 36px;
+    font-size: 1.4rem;
+  }
+  
+  #boardButtons {
+    margin-bottom: 20px;
   }
 } 
