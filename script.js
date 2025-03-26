@@ -260,9 +260,33 @@ function checkSuccess() {
 }
 
 // --- Path Processing (Input Handling) ---
-function processCell(cell) {
+function processCell(cell, isDragOperation = false) {
   if (path.length && sameCell(path[path.length - 1], cell)) return;
   const cellNum = getNumberAt(cell);
+  
+  // Check if cell is already in path
+  let indexInPath = path.findIndex(c => sameCell(c, cell));
+  if (indexInPath !== -1) {
+    if (!isDragOperation) {
+      // On click: truncate path to this cell (existing behavior)
+      path = path.slice(0, indexInPath + 1);
+      cursor = { x: cell.x, y: cell.y };
+      drawBoard();
+      checkSuccess();
+      return;
+    } else if (path.length >= 2 && indexInPath === path.length - 2) {
+      // On drag: allow backing up only to the previous cell in the path
+      path.pop(); // Remove the last cell (backing up)
+      cursor = { x: cell.x, y: cell.y };
+      drawBoard();
+      checkSuccess();
+      return;
+    } else {
+      // Prevent jumping to arbitrary cells in the path during drag
+      return;
+    }
+  }
+  
   if (path.length === 0) {
     const startCell = getCellOfNumber(Math.min(...numbers.map(n => n.num)));
     if (cellNum === Math.min(...numbers.map(n => n.num))) {
@@ -275,14 +299,6 @@ function processCell(cell) {
       return;
     }
   } else {
-    let indexInPath = path.findIndex(c => sameCell(c, cell));
-    if (indexInPath !== -1) {
-      path = path.slice(0, indexInPath + 1);
-      cursor = { x: cell.x, y: cell.y };
-      drawBoard();
-      checkSuccess();
-      return;
-    }
     const currentEnd = path[path.length - 1];
     if (isAdjacent(currentEnd, cell)) {
       path.push(cell);
@@ -348,16 +364,22 @@ function getCellFromEvent(e) {
   const x = (e.clientX - rect.left) * scaleX;
   const y = (e.clientY - rect.top) * scaleY;
   
-  return { 
-    x: Math.floor(x / cellSize()), 
-    y: Math.floor(y / cellSize()) 
-  };
+  // Calculate cell coordinates
+  let cellX = Math.floor(x / cellSize());
+  let cellY = Math.floor(y / cellSize());
+  
+  // Clamp values to ensure they're within board boundaries
+  cellX = Math.max(0, Math.min(cellX, boardSize - 1));
+  cellY = Math.max(0, Math.min(cellY, boardSize - 1));
+  
+  return { x: cellX, y: cellY };
 }
 
 canvas.addEventListener('mousedown', function(e) {
   lastInputWasKeyboard = false;
   dragging = true;
-  processCell(getCellFromEvent(e));
+  // On mousedown (click), we allow path truncation
+  processCell(getCellFromEvent(e), false);
   if (path.length > 0) {
     cursor = { x: path[path.length - 1].x, y: path[path.length - 1].y };
   }
@@ -366,7 +388,8 @@ canvas.addEventListener('mousedown', function(e) {
 canvas.addEventListener('mousemove', function(e) {
   lastInputWasKeyboard = false;
   if (!dragging) return;
-  processCell(getCellFromEvent(e));
+  // On mousemove (drag), we don't allow path truncation
+  processCell(getCellFromEvent(e), true);
   if (path.length > 0) {
     cursor = { x: path[path.length - 1].x, y: path[path.length - 1].y };
   }
@@ -380,7 +403,8 @@ canvas.addEventListener('touchstart', function(e) {
   e.preventDefault();
   lastInputWasKeyboard = false;
   dragging = true;
-  processCell(getCellFromEvent(e.touches[0]));
+  // On touchstart, we allow path truncation
+  processCell(getCellFromEvent(e.touches[0]), false);
   if (path.length > 0) {
     cursor = { x: path[path.length - 1].x, y: path[path.length - 1].y };
   }
@@ -390,7 +414,8 @@ canvas.addEventListener('touchmove', function(e) {
   e.preventDefault();
   lastInputWasKeyboard = false;
   if (!dragging) return;
-  processCell(getCellFromEvent(e.touches[0]));
+  // On touchmove, we don't allow path truncation
+  processCell(getCellFromEvent(e.touches[0]), true);
   if (path.length > 0) {
     cursor = { x: path[path.length - 1].x, y: path[path.length - 1].y };
   }
