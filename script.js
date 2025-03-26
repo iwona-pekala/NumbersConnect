@@ -212,7 +212,7 @@ function drawBoard() {
   }
   
   // Draw numbers inside black circles.
-  const circleRadius = 0.3 * cellSize();
+  const circleRadius = 0.4 * cellSize();
   for (let item of numbers) {
     const centerX = item.x * cellSize() + cellSize() / 2;
     const centerY = item.y * cellSize() + cellSize() / 2;
@@ -224,12 +224,17 @@ function drawBoard() {
   
   // Draw white number text on top.
   ctx.fillStyle = 'white';
-  ctx.font = '20px Arial';
+  
+  // Use responsive font size based on cell size
+  const fontSize = Math.max(16, Math.floor(cellSize() * 0.6));
+  const fontWeight = window.innerWidth <= 768 ? 'bold' : 'normal'; // Bold on mobile
+  ctx.font = `${fontWeight} ${fontSize}px Arial`;
+  
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   for (let item of numbers) {
     const centerX = item.x * cellSize() + cellSize() / 2;
-    const centerY = item.y * cellSize() + cellSize() / 2;
+    const centerY = item.y * cellSize() + cellSize() / 2 + Math.floor(fontSize * 0.1);
     ctx.fillText(item.num, centerX, centerY);
   }
 }
