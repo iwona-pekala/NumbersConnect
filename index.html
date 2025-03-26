@@ -475,6 +475,44 @@
 
     // --- Initial Render ---
     drawBoard();
+
+    // Function to determine and set the board size based on device/orientation
+    function setBoardSize() {
+      // Get window dimensions
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
+      const isLandscape = windowWidth > windowHeight;
+      
+      // Define device breakpoints (adjust as needed)
+      const isMobile = windowWidth <= 768;
+      const isTablet = windowWidth > 768 && windowWidth <= 1024;
+      const isDesktop = windowWidth > 1024;
+      
+      let boardSize;
+      
+      // Apply your sizing rules
+      if (isDesktop || (isTablet && isLandscape)) {
+        // Keep hardcoded size for desktop and tablet landscape
+        boardSize = 500; // Replace with your actual hardcoded value
+      } else if (isMobile && isLandscape) {
+        // For mobile landscape: use max screen height
+        boardSize = windowHeight * 0.9; // 90% of height (adjust as needed)
+      } else {
+        // For mobile portrait and tablet portrait: use max screen width
+        boardSize = windowWidth * 0.9; // 90% of width (adjust as needed)
+      }
+      
+      // Apply the new size to your board
+      // If you have a specific element ID, use that instead of 'game-board'
+      document.getElementById('gameCanvas').style.width = `${boardSize}px`;
+      document.getElementById('gameCanvas').style.height = `${boardSize}px`;
+    }
+
+    // Call initially
+    setBoardSize();
+
+    // Add event listener for orientation/resize changes
+    window.addEventListener('resize', setBoardSize);
   </script>
 </body>
 </html>
