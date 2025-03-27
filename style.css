@@ -81,9 +81,9 @@ button:active {
 }
 
 /* MOBILE STYLES */
-@media screen and (max-width: 768px) {
+/*@media screen and (max-width: 768px) {
   button {
-    height: 160px !important; /* Force override with !important */
+    height: 60px !important; 
     padding: 16px 32px !important;
     font-size: 2rem !important;
     background-color: #000 !important; 
@@ -102,4 +102,4 @@ button:active {
     border-radius: 4px !important;
     display: inline-block !important;
   }
-}
+}*/

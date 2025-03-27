@@ -475,49 +475,39 @@ canvas.addEventListener('blur', function() {
 // --- Initial Render ---
 drawBoard();
 
-// Function to determine and set the board size based on device/orientation
+// Update the setBoardSize function to better handle mobile views
 function setBoardSize() {
   // Get window dimensions
   const windowWidth = window.innerWidth;
   const windowHeight = window.innerHeight;
   const isLandscape = windowWidth > windowHeight;
   
-  // Define device breakpoints (adjust as needed)
-  const isMobile = windowWidth <= 768;
-  const isTablet = windowWidth > 768 && windowWidth <= 1024;
-  const isDesktop = windowWidth > 1024;
-  
   let boardSize;
   
-  // Apply your sizing rules
-  if (isDesktop || (isTablet && isLandscape)) {
-    // Keep hardcoded size for desktop and tablet landscape
-    boardSize = 500; // Replace with your actual hardcoded value
-  } else if (isMobile && isLandscape) {
-    // For mobile landscape: use max screen height
-    boardSize = windowHeight * 0.9; // 90% of height (adjust as needed)
+  // More conservative sizing for mobile
+  if (windowWidth <= 768) {
+    // For mobile: use more conservative width percentage
+    boardSize = Math.min(windowWidth * 0.85, windowHeight * 0.7);
   } else {
-    // For mobile portrait and tablet portrait: use max screen width
-    boardSize = windowWidth * 0.9; // 90% of width (adjust as needed)
+    // For desktop/tablet: maintain current size
+    boardSize = Math.min(600, windowWidth * 0.9);
   }
   
-  // Apply the new size to your board
+  // Apply the new size to the canvas
   const canvas = document.getElementById('gameCanvas');
   canvas.style.width = `${boardSize}px`;
   canvas.style.height = `${boardSize}px`;
   
-  // IMPORTANT: Update the actual canvas dimensions to match display size
+  // Update the actual canvas dimensions
   canvas.width = boardSize;
   canvas.height = boardSize;
   
-  // Redraw the board with updated dimensions
-  if (numbers.length > 0) {
+  // Redraw the board if needed
+  if (numbers && numbers.length > 0) {
     drawBoard();
   }
 }
 
-// Call initially
-setBoardSize();
-
-// Add event listener for orientation/resize changes
+// Call this function on both load and resize
+window.addEventListener('DOMContentLoaded', setBoardSize);
 window.addEventListener('resize', setBoardSize); 
