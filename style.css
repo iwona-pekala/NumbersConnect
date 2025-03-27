@@ -18,13 +18,13 @@ body {
 
 #boardButtons {
   margin: 10px;
+  display: flex;
+  gap: 10px;
+  margin: 15px auto;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-#boardButtons button {
-  margin: 0;
-  font-size: 1rem;
-  padding: 8px 16px;
-}
 
 #currentBoardDisplay {
   font-size: 18px;
@@ -33,9 +33,6 @@ body {
 
 /* Button styling - base size (for desktop) */
 button {
-  /* Desktop size */
-  min-width: 44px;
-  min-height: 44px;
   padding: 8px 16px;
   
   /* Appearance */
@@ -45,6 +42,7 @@ button {
   border-radius: 8px;
   font-size: 1rem;
   font-weight: bold;
+  height: 44px;
   
   /* Interaction */
   cursor: pointer;
@@ -67,22 +65,6 @@ button:active {
   transform: translateY(2px);
 }
 
-/* Board size buttons container */
-#boardButtons {
-  display: flex;
-  gap: 10px;
-  margin: 15px auto;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-/* Board size buttons specifically */
-#boardButtons button {
-  min-width: 65px;
-  min-height: 44px;
-  padding: 10px 20px;
-}
-
 /* Next board button container */
 #nextBoardDiv {
   margin-top: 15px;
@@ -90,76 +72,34 @@ button:active {
   justify-content: center;
 }
 
-#nextBoardDiv button {
-  min-width: 120px;
-  min-height: 44px;
-}
-
-/* MOBILE STYLES - SIGNIFICANTLY LARGER */
-@media (max-width: 768px) {
-  /* All buttons */
-  button {
-    min-height: 80px;
-    padding: 16px 32px;
-    font-size: 1.6rem;
-  }
-  
-  /* Board size buttons */
-  #boardButtons button {
-    min-width: 120px;
-    min-height: 80px;
-    padding: 16px 24px;
-    font-size: 1.6rem;
-    margin: 5px;
-  }
-  
-  /* Next board button */
-  #nextBoardDiv button {
-    min-width: 220px;
-    min-height: 80px;
-    font-size: 1.6rem;
-  }
-  
-  /* Add extra contrast to version number */
-  #version {
-    font-size: 1rem;
-    font-weight: bold;
-    margin-bottom: 10px;
-    background-color: #f0f0f0;
-    padding: 3px 8px;
-    border-radius: 4px;
-    display: inline-block;
-  }
-}
-
-/* EXTRA SMALL SCREENS - EVEN LARGER */
-@media (max-width: 480px) {
-  /* All buttons */
-  button {
-    min-height: 90px;
-    font-size: 1.8rem;
-  }
-  
-  /* Board size buttons */
-  #boardButtons button {
-    min-width: 130px;
-    min-height: 90px;
-    padding: 18px 24px;
-    font-size: 1.8rem;
-  }
-  
-  /* Next board button */
-  #nextBoardDiv button {
-    min-width: 250px;
-    min-height: 90px;
-    font-size: 1.8rem;
-  }
-}
-
-/* Add version styling if not already present */
+/* Version number */
 #version {
   font-size: 0.8rem;
   color: #666;
   margin-bottom: 5px;
   text-align: center;
-} 
+}
+
+/* MOBILE STYLES */
+@media screen and (max-width: 768px) {
+  button {
+    height: 160px !important; /* Force override with !important */
+    padding: 16px 32px !important;
+    font-size: 2rem !important;
+    background-color: #000 !important; 
+    color: #fff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: bold !important;
+  }
+  
+  #version {
+    font-size: 2rem !important;
+    font-weight: bold !important;
+    margin-bottom: 10px !important;
+    background-color: #f0f0f0 !important;
+    padding: 3px 8px !important;
+    border-radius: 4px !important;
+    display: inline-block !important;
+  }
+}
