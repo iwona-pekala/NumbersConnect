@@ -186,7 +186,7 @@ function drawBoard() {
       const startY = last.y * cellSize() + cellSize() / 2;
       const endX = cursor.x * cellSize() + cellSize() / 2;
       const endY = cursor.y * cellSize() + cellSize() / 2;
-      const previewLineWidth = 0.7 * cellSize();
+      const previewLineWidth = 0.6 * cellSize();
       // Draw preview outline (using main line color) with same thickness.
       ctx.lineWidth = previewLineWidth;
       ctx.strokeStyle = "#FF5C5C";
@@ -209,7 +209,7 @@ function drawBoard() {
   
   // Draw main marker line (or dot)
   if (path.length > 0) {
-    const mainLineWidth = 0.7 * cellSize();
+    const mainLineWidth = 0.6 * cellSize();
     ctx.lineWidth = mainLineWidth;
     ctx.strokeStyle = "#FF5C5C";
     ctx.lineCap = "round";
@@ -243,8 +243,8 @@ function drawBoard() {
     ctx.setLineDash([]);
   }
   
-  // Draw numbers inside black circles.
-  const circleRadius = 0.35 * cellSize();
+  // Draw numbers inside black circles - REDUCED SIZE
+  const circleRadius = 0.25 * cellSize();
   for (let item of numbers) {
     const centerX = item.x * cellSize() + cellSize() / 2;
     const centerY = item.y * cellSize() + cellSize() / 2;
@@ -258,7 +258,7 @@ function drawBoard() {
   ctx.fillStyle = 'white';
   
   // Use responsive font size based on cell size
-  const fontSize = Math.max(16, Math.floor(cellSize() * 0.5));
+  const fontSize = Math.max(16, Math.floor(cellSize() * 0.4));
   const fontWeight = window.innerWidth <= 768 ? 'bold' : 'normal'; // Bold on mobile
   ctx.font = `${fontWeight} ${fontSize}px Arial`;
   
