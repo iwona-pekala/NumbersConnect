@@ -57,6 +57,15 @@ function chooseNextBoard(boards, size) {
 // --- Load a board JSON file for a given size ---
 function loadBoardSize(size) {
   currentSize = size;
+  
+  // Show canvas container and hide select board message
+  document.getElementById('canvasContainer').style.display = 'block';
+  document.getElementById('selectBoardMessage').style.display = 'none';
+  
+  // Call setBoardSize() immediately after showing the canvas
+  // This ensures proper dimensions are calculated now that it's visible
+  setBoardSize();
+  
   fetch("boards" + size + ".json")
     .then(response => {
       if (!response.ok) throw new Error("HTTP error " + response.status);

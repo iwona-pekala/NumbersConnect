@@ -9,7 +9,12 @@
 </head>
 <body>
   <h2>Connect the Numbers Game – Multi-Board Version</h2>
-  <div id="version">v1.3</div>
+  
+  <div id="selectBoardMessage">
+    <h2>Select a board</h2>
+  </div>
+  
+  <div id="version">v1.4</div>
   <div id="boardButtons">
     <button onclick="loadBoardSize(6)">6×6</button>
     <button onclick="loadBoardSize(7)">7×7</button>
@@ -17,8 +22,8 @@
   </div>
   <div id="currentBoardDisplay"></div>
   
-  <!-- New canvas container div -->
-  <div id="canvasContainer">
+  <!-- New canvas container div - initially hidden -->
+  <div id="canvasContainer" style="display: none;">
     <canvas id="gameCanvas" width="600" height="600" tabindex="0"></canvas>
   </div>
   
