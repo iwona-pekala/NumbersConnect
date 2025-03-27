@@ -58,6 +58,9 @@ function chooseNextBoard(boards, size) {
 function loadBoardSize(size) {
   currentSize = size;
   
+  // Save the selected board size in a cookie
+  setCookie("lastSelectedSize", size, 365);
+  
   // Show canvas container and hide select board message
   document.getElementById('canvasContainer').style.display = 'block';
   document.getElementById('selectBoardMessage').style.display = 'none';
@@ -87,8 +90,39 @@ function loadBoardSize(size) {
     })
     .then(data => {
       currentBoards = data;
-      currentBoard = chooseNextBoard(currentBoards, size);
+      
+      // Check if we have a saved board ID for this size
+      const savedBoardId = getCookie("currentBoardId_" + size);
+      if (savedBoardId) {
+        // Find the saved board by ID
+        const savedBoard = data.find(board => board.id == savedBoardId);
+        if (savedBoard) {
+          currentBoard = savedBoard;
+        } else {
+          currentBoard = chooseNextBoard(currentBoards, size);
+        }
+      } else {
+        currentBoard = chooseNextBoard(currentBoards, size);
+      }
+      
       initBoard(currentBoard);
+      
+      // After initializing the board, try to restore the saved path
+      try {
+        const savedPath = getCookie("currentPath_" + size);
+        if (savedPath) {
+          path = JSON.parse(savedPath);
+          // Update cursor to end of path
+          if (path.length > 0) {
+            cursor = { x: path[path.length - 1].x, y: path[path.length - 1].y };
+          }
+          drawBoard();
+          checkSuccess();
+        }
+      } catch (e) {
+        console.error("Error restoring saved path:", e);
+        // If there's an error parsing the path, just continue with a new game
+      }
     })
     .catch(error => {
       console.error("Error loading board file:", error);
@@ -125,6 +159,9 @@ function completeBoard() {
 
 // --- Go to Next Board ---
 function nextBoard() {
+  // Clear the saved path for this size when going to next board
+  setCookie("currentPath_" + currentSize, "", -1);
+  
   currentBoard = chooseNextBoard(currentBoards, currentSize);
   initBoard(currentBoard);
 }
@@ -291,6 +328,18 @@ function checkSuccess() {
   completeBoard();
 }
 
+// --- Save current game state (path, board id, etc.) ---
+function saveGameState() {
+  // Only save if we have a valid board and path
+  if (currentBoard && path.length > 0) {
+    // Save the current board ID for this size
+    setCookie("currentBoardId_" + currentSize, currentBoard.id, 365);
+    
+    // Save the current path as JSON string
+    setCookie("currentPath_" + currentSize, JSON.stringify(path), 365);
+  }
+}
+
 // --- Path Processing (Input Handling) ---
 function processCell(cell, isDragOperation = false) {
   if (path.length && sameCell(path[path.length - 1], cell)) return;
@@ -385,6 +434,9 @@ function processCell(cell, isDragOperation = false) {
   cursor = { x: cell.x, y: cell.y };
   drawBoard();
   checkSuccess();
+  
+  // Save game state after each path change
+  saveGameState();
 }
 
 // --- Mouse & Touch Handlers ---
@@ -537,6 +589,19 @@ function setBoardSize() {
   }
 }
 
-// Call this function at the right times
-window.addEventListener('load', setBoardSize);
+// --- Initial setup and board loading ---
+window.addEventListener('load', function() {
+  setBoardSize();
+  
+  // Check for saved board size
+  const savedSize = getCookie("lastSelectedSize");
+  if (savedSize) {
+    loadBoardSize(parseInt(savedSize));
+  } else {
+    // If no saved size, use default (show selection message)
+    document.getElementById('canvasContainer').style.display = 'none';
+    document.getElementById('selectBoardMessage').style.display = 'block';
+  }
+});
+
 window.addEventListener('resize', setBoardSize); 
