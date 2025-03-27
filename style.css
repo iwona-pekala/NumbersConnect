@@ -1,7 +1,18 @@
+/* Canvas container styling */
+#canvasContainer {
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 0 20px; /* Add padding on sides for mobile */
+  box-sizing: border-box;
+}
+
+/* Canvas should fill its container */
 canvas {
   border: 1px solid #000;
   display: block;
-  margin: 20px auto;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1/1; /* Keep it square */
   outline: none;
 }
 

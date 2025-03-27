@@ -34,7 +34,10 @@ let lastInputWasKeyboard = false;
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const cellSize = () => canvas.width / boardSize;
+const cellSize = () => {
+  const containerWidth = canvas.getBoundingClientRect().width;
+  return containerWidth / boardSize;
+};
 const messageEl = document.getElementById('message');
 const nextBoardDiv = document.getElementById('nextBoardDiv');
 const currentBoardDisplay = document.getElementById('currentBoardDisplay');
@@ -130,16 +133,22 @@ function getCellOfNumber(num) {
 // --- Main Drawing Function ---
 function drawBoard() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  // Draw grid lines
+  
+  // Draw grid lines - FIXED to avoid double lines at edges
   ctx.lineWidth = 1;
-  ctx.strokeStyle = '#ccc';
+  ctx.strokeStyle = '#949494';
   ctx.lineCap = 'butt';
   ctx.lineJoin = 'miter';
-  for (let i = 0; i <= boardSize; i++) {
+  
+  // Start drawing grid lines from 1 (not 0) to avoid overlap with border
+  for (let i = 1; i < boardSize; i++) {
+    // Draw horizontal lines
     ctx.beginPath();
     ctx.moveTo(0, i * cellSize());
     ctx.lineTo(canvas.width, i * cellSize());
     ctx.stroke();
+    
+    // Draw vertical lines
     ctx.beginPath();
     ctx.moveTo(i * cellSize(), 0);
     ctx.lineTo(i * cellSize(), canvas.height);
@@ -212,7 +221,7 @@ function drawBoard() {
   }
   
   // Draw numbers inside black circles.
-  const circleRadius = 0.4 * cellSize();
+  const circleRadius = 0.35 * cellSize();
   for (let item of numbers) {
     const centerX = item.x * cellSize() + cellSize() / 2;
     const centerY = item.y * cellSize() + cellSize() / 2;
@@ -226,7 +235,7 @@ function drawBoard() {
   ctx.fillStyle = 'white';
   
   // Use responsive font size based on cell size
-  const fontSize = Math.max(16, Math.floor(cellSize() * 0.6));
+  const fontSize = Math.max(16, Math.floor(cellSize() * 0.5));
   const fontWeight = window.innerWidth <= 768 ? 'bold' : 'normal'; // Bold on mobile
   ctx.font = `${fontWeight} ${fontSize}px Arial`;
   
@@ -358,15 +367,15 @@ function processCell(cell, isDragOperation = false) {
 // --- Mouse & Touch Handlers ---
 function getCellFromEvent(e) {
   const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
   
-  const x = (e.clientX - rect.left) * scaleX;
-  const y = (e.clientY - rect.top) * scaleY;
+  // Calculate position in CSS pixels (display coordinates)
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
   
-  // Calculate cell coordinates
-  let cellX = Math.floor(x / cellSize());
-  let cellY = Math.floor(y / cellSize());
+  // Convert to cell coordinates using the display width
+  const displayCellSize = rect.width / boardSize;
+  let cellX = Math.floor(x / displayCellSize);
+  let cellY = Math.floor(y / displayCellSize);
   
   // Clamp values to ensure they're within board boundaries
   cellX = Math.max(0, Math.min(cellX, boardSize - 1));
@@ -475,32 +484,29 @@ canvas.addEventListener('blur', function() {
 // --- Initial Render ---
 drawBoard();
 
-// Update the setBoardSize function to better handle mobile views
+// Simpler function to maintain crisp canvas rendering
 function setBoardSize() {
-  // Get window dimensions
-  const windowWidth = window.innerWidth;
-  const windowHeight = window.innerHeight;
-  const isLandscape = windowWidth > windowHeight;
-  
-  let boardSize;
-  
-  // More conservative sizing for mobile
-  if (windowWidth <= 768) {
-    // For mobile: use more conservative width percentage
-    boardSize = Math.min(windowWidth * 0.85, windowHeight * 0.7);
-  } else {
-    // For desktop/tablet: maintain current size
-    boardSize = Math.min(600, windowWidth * 0.9);
-  }
-  
-  // Apply the new size to the canvas
   const canvas = document.getElementById('gameCanvas');
-  canvas.style.width = `${boardSize}px`;
-  canvas.style.height = `${boardSize}px`;
+  const container = document.getElementById('canvasContainer');
   
-  // Update the actual canvas dimensions
-  canvas.width = boardSize;
-  canvas.height = boardSize;
+  // Get the container's inner width
+  const displayWidth = container.clientWidth - 
+                         parseInt(getComputedStyle(container).paddingLeft) - 
+                         parseInt(getComputedStyle(container).paddingRight);
+  
+  // Make canvas square at display size
+  canvas.style.width = displayWidth + 'px';
+  canvas.style.height = displayWidth + 'px';
+  
+  // Set actual canvas dimensions equal to CSS dimensions times device pixel ratio
+  const pixelRatio = window.devicePixelRatio || 1;
+  canvas.width = displayWidth * pixelRatio;
+  canvas.height = displayWidth * pixelRatio;
+  
+  // Apply scaling to the context to account for the pixel ratio
+  const ctx = canvas.getContext('2d');
+  ctx.resetTransform(); // Clear any previous transforms
+  ctx.scale(pixelRatio, pixelRatio);
   
   // Redraw the board if needed
   if (numbers && numbers.length > 0) {
@@ -508,6 +514,6 @@ function setBoardSize() {
   }
 }
 
-// Call this function on both load and resize
-window.addEventListener('DOMContentLoaded', setBoardSize);
+// Call this function at the right times
+window.addEventListener('load', setBoardSize);
 window.addEventListener('resize', setBoardSize); 

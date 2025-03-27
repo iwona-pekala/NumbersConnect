@@ -16,7 +16,12 @@
     <button onclick="loadBoardSize(8)">8×8</button>
   </div>
   <div id="currentBoardDisplay"></div>
-  <canvas id="gameCanvas" width="600" height="600" tabindex="0"></canvas>
+  
+  <!-- New canvas container div -->
+  <div id="canvasContainer">
+    <canvas id="gameCanvas" width="600" height="600" tabindex="0"></canvas>
+  </div>
+  
   <div id="message"></div>
   <div id="nextBoardDiv" style="margin-top:10px; display:none;">
     <button onclick="nextBoard()">Next Board</button>
