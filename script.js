@@ -62,6 +62,20 @@ function loadBoardSize(size) {
   document.getElementById('canvasContainer').style.display = 'block';
   document.getElementById('selectBoardMessage').style.display = 'none';
   
+  // Update button states - simpler approach
+  // First, remove selected class and set aria-pressed to false for all buttons
+  document.querySelectorAll('.size-btn').forEach(btn => {
+    btn.classList.remove('selected');
+    btn.setAttribute('aria-pressed', 'false');
+  });
+  
+  // Then add selected class and set aria-pressed to true for the selected button
+  const selectedBtn = document.getElementById('btn-' + size);
+  if (selectedBtn) {
+    selectedBtn.classList.add('selected');
+    selectedBtn.setAttribute('aria-pressed', 'true');
+  }
+  
   // Call setBoardSize() immediately after showing the canvas
   // This ensures proper dimensions are calculated now that it's visible
   setBoardSize();

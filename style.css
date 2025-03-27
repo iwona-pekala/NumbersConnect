@@ -76,6 +76,23 @@ button:active {
   transform: translateY(2px);
 }
 
+/* Selected button state - with darker background and extended underline */
+.size-btn.selected {
+  position: relative;
+  background-color: #444;
+}
+
+/* Create an extended underline using pseudo-element */
+.size-btn.selected::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 8px;
+  height: 2px;
+  background-color: white;
+}
+
 /* Next board button container */
 #nextBoardDiv {
   margin-top: 15px;
@@ -114,3 +131,16 @@ button:active {
     display: inline-block !important;
   }
 }*/
+
+/* Utility class for visually hidden text (accessible to screen readers) */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
