@@ -604,4 +604,451 @@ window.addEventListener('load', function() {
   }
 });
 
+////////////////////////////////////
+// HINT HELPER FUNCTIONS + hint()
+////////////////////////////////////
+
+/**
+ * Debug logger for hint() logic.
+ */
+function hintDebug(msg) {
+  console.log("[HINT] " + msg);
+}
+
+/**
+ * Returns the number at each cell of the path, in the order they appear.
+ * Example: if path = [{x:1,y:2}, {x:1,y:3}, {x:2,y:3}...],
+ *          and numbers array says (1,2)->#2, (2,3)->#3,
+ *          then it returns [2, 3, ...].
+ */
+function extractNumberSequenceFromPath(p) {
+  let seq = [];
+  for (let cell of p) {
+    const n = getNumberAt(cell); // uses your existing function
+    if (n !== null) seq.push(n);
+  }
+  return seq;
+}
+
+/**
+ * Find how many numbered cells at the start of userPath match the start
+ * of the currentBoard.path (which is the solution).
+ * For instance:
+ *   user path numbers => [1, 2, 3, 4, ...]
+ *   solution numbers  => [1, 2, 5, 6, ...]
+ * The "longest valid prefix" is [1,2], so the count = 2.
+ */
+function longestValidPrefixCount(userPath, solutionPath) {
+  const userNums = extractNumberSequenceFromPath(userPath);
+  const solNums = extractNumberSequenceFromPath(solutionPath);
+  let count = 0;
+  for (let i = 0; i < userNums.length && i < solNums.length; i++) {
+    if (userNums[i] === solNums[i]) count++;
+    else break;
+  }
+  return count;
+}
+
+/**
+ * Removes everything in userPath after the last valid numbered cell
+ * in the matched prefix. If there's no matching prefix, userPath is cleared.
+ */
+function truncateToValidPrefix(userPath, prefixCount) {
+  if (prefixCount === 0) {
+    hintDebug("No valid prefix; clearing user path.");
+    userPath.splice(0, userPath.length);
+    return;
+  }
+  // we keep exactly prefixCount numbered cells
+  let counted = 0;
+  for (let i = 0; i < userPath.length; i++) {
+    const n = getNumberAt(userPath[i]);
+    if (n !== null) {
+      counted++;
+      if (counted === prefixCount) {
+        // remove everything after i
+        userPath.splice(i + 1);
+        return;
+      }
+    }
+  }
+  // fallback
+  userPath.splice(0, userPath.length);
+}
+
+/**
+ * Returns the index in 'solutionPath' of the Nth numbered cell,
+ * or null if not found. For example, if N=1 => first numbered cell in solution (i.e. #1).
+ * If N=2 => second numbered cell in solution (i.e. #2).
+ */
+function getIndexOfNthNumber(solutionPath, n) {
+  if (n < 1) return null; 
+  let foundCount = 0;
+  for (let i = 0; i < solutionPath.length; i++) {
+    let num = getNumberAt(solutionPath[i]); 
+    if (num !== null) {
+      foundCount++;
+      if (foundCount === n) return i;
+    }
+  }
+  return null;
+}
+
+/**
+ * Extends userPath by exactly one "next numbered cell" from solution.
+ * If prefixCount=0, we connect the first two numbers from the solution.
+ * If prefixCount=k>0, we connect the k-th numbered cell to the (k+1)-th.
+ */
+function addNextSegment(userPath, solutionPath, prefixCount) {
+  const solUserWants = prefixCount + 1; // we want to add the (prefixCount+1)-th number
+  const idxPrev = getIndexOfNthNumber(solutionPath, prefixCount);   // k-th
+  const idxNext = getIndexOfNthNumber(solutionPath, solUserWants);  // (k+1)-th
+  
+  if (idxNext === null) {
+    hintDebug("No next number to add; possibly at the end of solution?");
+    return; 
+  }
+  if (idxPrev === null) {
+    hintDebug("prefixCount=0, so let's connect the first two numbered cells.");
+    // If prefixCount=0, we connect the 1st and 2nd numbered cells in the solution
+    const idx1 = getIndexOfNthNumber(solutionPath, 1);
+    const idx2 = getIndexOfNthNumber(solutionPath, 2);
+    if (idx1 == null || idx2 == null) return;
+    const start = Math.min(idx1, idx2);
+    const end   = Math.max(idx1, idx2);
+    const slice = solutionPath.slice(start, end + 1);
+    userPath.push(...slice);
+    return;
+  }
+  // Otherwise we have valid indices for the k-th and (k+1)-th
+  hintDebug("Adding segment from numbered cell " + prefixCount + " to " + (prefixCount + 1));
+  const start = Math.min(idxPrev, idxNext);
+  const end   = Math.max(idxPrev, idxNext);
+  const slice = solutionPath.slice(start, end + 1);
+  userPath.push(...slice);
+}
+
+/**
+ * The main hint function:
+ *  1) If the puzzle is already complete, do nothing.
+ *  2) Determine how many of the user's numbered cells match the solution from the start.
+ *  3) Remove everything after that valid prefix.
+ *  4) Add one more numbered cell from the solution path.
+ *  5) Redraw and check success.
+ */
+///////////////////////
+// HELPER FUNCTIONS
+///////////////////////
+
+/**
+ * Returns the numeric label at cell, e.g. #1..#9 if it’s a special cell,
+ * or null otherwise. (Reuses your existing 'getNumberAt(cell)' logic.)
+ */
+function getNumberOrNull(cell) {
+  return getNumberAt(cell); // your existing function
+}
+
+/**
+ * Extracts the sequence of numbers in a path in order:
+ * e.g. if path has cells leading from #1 => #2 => #3 (with in-between squares),
+ * you might see an array like [1, null, null, 2, null, 3, ...].
+ * This helper returns only [1,2,3] in that order.
+ */
+function extractNumberSequence(p) {
+  const seq = [];
+  for (let c of p) {
+    const n = getNumberOrNull(c);
+    if (n !== null) seq.push(n);
+  }
+  return seq;
+}
+
+/**
+ * Determines how many consecutive numbers from 1 upwards
+ * are fully connected in the user's path in the correct order.
+ * For example, if user path has #1, #2 in correct order, but #3 is missing
+ * or out of place, we return 2. 
+ */
+function countConsecutiveNumbersSoFar(userPath) {
+  // First, build the array of numbers in the user path:
+  // e.g. [1,2,2,5,3,...].
+  // We want the largest k such that user has #1..#k in order.
+  const nums = extractNumberSequence(userPath);
+
+  let expected = 1;
+  for (let i = 0; i < nums.length; i++) {
+    if (nums[i] === expected) {
+      expected++;
+    } else if (nums[i] > expected) {
+      // we found a bigger number than expected => sequence is broken
+      break;
+    }
+  }
+  // If user’s path had #1, #2, #3 in perfect order, expected would now be 4
+  // meaning they've completed up to 3. So the largest consecutive number is expected-1.
+  return expected - 1;
+}
+
+/**
+ * Removes everything in 'userPath' after the last fully-correct consecutive number.
+ * So if user completed up to #2, we keep the path up to #2, removing anything after that.
+ */
+function truncateUserPathToLastCorrectNumber(userPath, lastCorrectNum) {
+  if (lastCorrectNum < 1) {
+    // If user hasn't even placed #1, clear entire path
+    userPath.splice(0, userPath.length);
+    return;
+  }
+  // We'll keep everything up through #lastCorrectNum
+  let foundCount = 0;
+  for (let i = 0; i < userPath.length; i++) {
+    let n = getNumberOrNull(userPath[i]);
+    if (n === lastCorrectNum) {
+      foundCount++;
+      // remove everything after i
+      userPath.splice(i + 1);
+      return;
+    }
+  }
+  // fallback if something weird occurs
+  userPath.splice(0, userPath.length);
+}
+
+/**
+ * Given a board’s official path (the complete solution),
+ * finds all squares from number `startNum` to number `endNum` inclusive,
+ * and returns them in the correct sub-order.
+ * For example, if startNum=2 and endNum=3,
+ * and solution path visits (4,5) => (5,5) => (5,4) => (5,3) 
+ * between #2 and #3, we return exactly that sub-array of coordinates.
+ */
+function getSolutionSegmentForNumbers(solutionPath, startNum, endNum) {
+  if (!solutionPath || !solutionPath.length) return [];
+
+  // We scan solutionPath to find all squares from #startNum up to #endNum
+  // inclusive, i.e. from the cell containing #startNum to the cell containing #endNum.
+  // Because it might pass intermediate squares that have no number, we must
+  // start at the #startNum cell, and end at the #endNum cell (both inclusive).
+  let startIndex = -1;
+  let endIndex   = -1;
+  // Find the cell that has startNum
+  for (let i = 0; i < solutionPath.length; i++) {
+    if (getNumberOrNull(solutionPath[i]) === startNum) {
+      startIndex = i;
+      break;
+    }
+  }
+  // find the cell that has endNum, searching from startIndex forward
+  for (let j = startIndex + 1; j < solutionPath.length; j++) {
+    if (getNumberOrNull(solutionPath[j]) === endNum) {
+      endIndex = j;
+      break;
+    }
+  }
+  if (startIndex === -1 || endIndex === -1) {
+    // If we can't find them, something is off
+    return [];
+  }
+  // The sub-array from startIndex..endIndex
+  return solutionPath.slice(startIndex, endIndex + 1);
+}
+
+//////////////////////////
+// HELPER FUNCTIONS
+//////////////////////////
+
+/**
+ * For a cell {x,y}, returns the numbered label (#1..#9) or null if none.
+ * This reuses your existing getNumberAt(cell) logic.
+ */
+function getNumberOrNull(cell) {
+  return getNumberAt(cell);
+}
+
+/**
+ * Returns the official subpath from number n to number n+1, inclusive,
+ * based on the board's "currentBoard.path". That is, we look for
+ * the cell containing #n, then collect every coordinate in the solution path
+ * until we reach #n+1 (inclusive).
+ */
+function getOfficialSegment(n) {
+  const sol = currentBoard.path; // the entire official solution route
+  if (!sol || sol.length === 0) return [];
+
+  // 1) Find the cell with #n
+  let startIndex = -1;
+  for (let i = 0; i < sol.length; i++) {
+    const num = getNumberOrNull(sol[i]);
+    if (num === n) {
+      startIndex = i;
+      break;
+    }
+  }
+  // 2) Find the cell with #(n+1)
+  let endIndex = -1;
+  for (let j = startIndex + 1; j < sol.length; j++) {
+    const num = getNumberOrNull(sol[j]);
+    if (num === (n + 1)) {
+      endIndex = j;
+      break;
+    }
+  }
+  // If not found, it might mean #n was the last number (9).
+  if (startIndex === -1 || endIndex === -1) {
+    return [];
+  }
+  return sol.slice(startIndex, endIndex + 1);
+}
+
+/**
+ * Checks if userPath has a correct segment for #n→#(n+1).
+ * We'll find where #n and #(n+1) appear in userPath, then see if
+ * all intermediate cells match the official subpath exactly.
+ *
+ * Return:
+ *   - "OK" if userPath's #n..#(n+1) exactly matches the official segment
+ *   - "MISSING" if userPath doesn't have #n and #(n+1) in the correct order
+ *   - "WRONG" if userPath has #n..#(n+1) but differs from the official route
+ */
+function checkUserSegment(n, userPath) {
+  // find indices in userPath for #n and #(n+1)
+  let idxStart = -1;
+  for (let i = 0; i < userPath.length; i++) {
+    if (getNumberOrNull(userPath[i]) === n) {
+      idxStart = i;
+      break;
+    }
+  }
+  if (idxStart === -1) {
+    return "MISSING"; // no #n => not even started
+  }
+
+  let idxEnd = -1;
+  for (let j = idxStart + 1; j < userPath.length; j++) {
+    if (getNumberOrNull(userPath[j]) === (n + 1)) {
+      idxEnd = j;
+      break;
+    }
+  }
+  if (idxEnd === -1) {
+    return "MISSING"; // found #n but not #(n+1)
+  }
+
+  // We have #n..#(n+1) in userPath => compare each coordinate to official subpath
+  const official = getOfficialSegment(n);
+  if (official.length === 0) {
+    // means there's no sub-segment in the official solution for #n..#(n+1)
+    return "WRONG";
+  }
+  // build user subpath
+  const userSubpath = userPath.slice(idxStart, idxEnd + 1);
+  // compare them by exact coordinate sequence
+  // because solution path may have a certain order of intermediate squares
+  if (userSubpath.length !== official.length) {
+    return "WRONG";
+  }
+  for (let k = 0; k < official.length; k++) {
+    if (official[k].x !== userSubpath[k].x || official[k].y !== userSubpath[k].y) {
+      return "WRONG";
+    }
+  }
+  // if we pass everything => user subpath is correct
+  return "OK";
+}
+
+/**
+ * Remove everything in userPath from the index "cutIndex" onward.
+ */
+function truncatePathAt(userPath, cutIndex) {
+  if (cutIndex < 0) return;
+  userPath.splice(cutIndex, userPath.length - cutIndex);
+}
+
+/**
+ * Appends the official #n..#(n+1) subpath to userPath, skipping the first cell
+ * if userPath already ends with it. This prevents duplicating the cell at the junction.
+ */
+function appendOfficialSegment(n, userPath) {
+  const seg = getOfficialSegment(n);
+  if (seg.length === 0) return;
+
+  // if user path last cell is the same as seg[0], skip seg[0]
+  const lastCell = userPath.length > 0 ? userPath[userPath.length - 1] : null;
+  if (
+    lastCell &&
+    seg.length > 1 &&
+    lastCell.x === seg[0].x &&
+    lastCell.y === seg[0].y
+  ) {
+    seg.shift();
+  }
+  userPath.push(...seg);
+}
+
+//////////////////////
+// MAIN hint() FUNCTION
+//////////////////////
+function hint() {
+  console.log("[HINT] Called.");
+
+  // 1) If puzzle is already complete, do nothing
+  if (messageEl.textContent.includes("Congratulations")) {
+    console.log("[HINT] Puzzle is done, no hint needed.");
+    return;
+  }
+
+  // We'll check each numbered pair #1→#2, #2→#3, #3→#4, up to #8→#9
+  // to find which segment is the first that is "MISSING" or "WRONG".
+
+  let firstBadSegment = -1; 
+  for (let n = 1; n < 9; n++) { 
+    const status = checkUserSegment(n, path);
+    console.log(`[HINT] Checking #${n}->#${n+1}: ${status}`);
+    if (status === "MISSING" || status === "WRONG") {
+      firstBadSegment = n;
+      break;
+    }
+  }
+
+  // 2) If we found no bad segments => that means #1->#2..#8->#9 are all correct
+  // So maybe the user has a complete path or is very close to done
+  if (firstBadSegment === -1) {
+    console.log("[HINT] All segments #1->#2..#8->#9 appear correct. Possibly done or missing final squares.");
+    // If the puzzle actually isn't done, you could still do final squares, but let's do nothing
+    return;
+  }
+
+  // 3) We found a problem with #firstBadSegment..#(firstBadSegment+1)
+  // We remove everything in the user's path from #firstBadSegment onward
+  // That means we find where #firstBadSegment appears in path, and truncate from there
+  let cutIndex = -1;
+  for (let i = 0; i < path.length; i++) {
+    if (getNumberOrNull(path[i]) === firstBadSegment) {
+      cutIndex = i;
+      break;
+    }
+  }
+  if (cutIndex === -1) {
+    // If we don't even have #firstBadSegment, we cut everything
+    cutIndex = 0;
+  }
+  truncatePathAt(path, cutIndex);
+
+  // 4) Now we forcibly append the official subpath for #firstBadSegment..#(firstBadSegment+1)
+  console.log(`[HINT] Removing path from index ${cutIndex} onward. Now adding official #${firstBadSegment}..#${firstBadSegment+1}.`);
+  appendOfficialSegment(firstBadSegment, path);
+
+  // 5) Redraw and check success
+  if (path.length > 0) {
+    cursor = { x: path[path.length - 1].x, y: path[path.length - 1].y };
+  }
+  drawBoard();
+  checkSuccess();
+
+  console.log("[HINT] Done. Path length:", path.length);
+}
+
+
+
+
 window.addEventListener('resize', setBoardSize); 
