@@ -384,22 +384,59 @@ function processCell(cell, isDragOperation = false) {
     if (isAdjacent(currentEnd, cell)) {
       path.push(cell);
     } else if (currentEnd.x === cell.x || currentEnd.y === cell.y) {
+      // Before adding cells in a straight line, check if any are already in the path
+      let pathContainsExistingCell = false;
+      
       if (currentEnd.x === cell.x) {
         let startY = currentEnd.y;
         let endY = cell.y;
         let step = (endY > startY) ? 1 : -1;
-        for (let y = startY + step; y !== endY; y += step) {
-          path.push({ x: currentEnd.x, y: y });
+        for (let y = startY + step; y !== endY + step; y += step) {
+          const checkCell = { x: currentEnd.x, y: y };
+          if (path.some(c => sameCell(c, checkCell)) && y !== endY) {
+            pathContainsExistingCell = true;
+            break;
+          }
         }
-        path.push(cell);
       } else {
         let startX = currentEnd.x;
         let endX = cell.x;
         let step = (endX > startX) ? 1 : -1;
-        for (let x = startX + step; x !== endX; x += step) {
-          path.push({ x: x, y: currentEnd.y });
+        for (let x = startX + step; x !== endX + step; x += step) {
+          const checkCell = { x: x, y: currentEnd.y };
+          if (path.some(c => sameCell(c, checkCell)) && x !== endX) {
+            pathContainsExistingCell = true;
+            break;
+          }
         }
-        path.push(cell);
+      }
+      
+      // Only add cells if none of them are already in the path
+      // (except the target cell itself for truncation)
+      if (!pathContainsExistingCell) {
+        if (currentEnd.x === cell.x) {
+          let startY = currentEnd.y;
+          let endY = cell.y;
+          let step = (endY > startY) ? 1 : -1;
+          for (let y = startY + step; y !== endY; y += step) {
+            path.push({ x: currentEnd.x, y: y });
+          }
+          path.push(cell);
+        } else {
+          let startX = currentEnd.x;
+          let endX = cell.x;
+          let step = (endX > startX) ? 1 : -1;
+          for (let x = startX + step; x !== endX; x += step) {
+            path.push({ x: x, y: currentEnd.y });
+          }
+          path.push(cell);
+        }
+      } else if (!isDragOperation) {
+        // On non-drag operations, we still allow truncation
+        let indexInPath = path.findIndex(c => sameCell(c, cell));
+        if (indexInPath !== -1) {
+          path = path.slice(0, indexInPath + 1);
+        }
       }
     } else if (cellNum !== null) {
       let lastNumber = null;
@@ -741,7 +778,7 @@ function addNextSegment(userPath, solutionPath, prefixCount) {
 ///////////////////////
 
 /**
- * Returns the numeric label at cell, e.g. #1..#9 if it’s a special cell,
+ * Returns the numeric label at cell, e.g. #1..#9 if it's a special cell,
  * or null otherwise. (Reuses your existing 'getNumberAt(cell)' logic.)
  */
 function getNumberOrNull(cell) {
@@ -784,7 +821,7 @@ function countConsecutiveNumbersSoFar(userPath) {
       break;
     }
   }
-  // If user’s path had #1, #2, #3 in perfect order, expected would now be 4
+  // If user's path had #1, #2, #3 in perfect order, expected would now be 4
   // meaning they've completed up to 3. So the largest consecutive number is expected-1.
   return expected - 1;
 }
@@ -815,7 +852,7 @@ function truncateUserPathToLastCorrectNumber(userPath, lastCorrectNum) {
 }
 
 /**
- * Given a board’s official path (the complete solution),
+ * Given a board's official path (the complete solution),
  * finds all squares from number `startNum` to number `endNum` inclusive,
  * and returns them in the correct sub-order.
  * For example, if startNum=2 and endNum=3,
